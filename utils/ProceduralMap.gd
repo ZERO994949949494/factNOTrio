@@ -1,36 +1,48 @@
-extends TileMap
+extends Node2D
 
-@onready var tilemap=$Map
+@export var width:int=300
+@export var height:int=300
 
-@export var noise_texture:NoiseTexture2D
-@export var biomes_noise_texture:NoiseTexture2D
-@export var ore_noise_texture:NoiseTexture2D
+@export var terrain:FastNoiseLite=FastNoiseLite.new()
+@export var biomes:FastNoiseLite=FastNoiseLite.new()
+@export var ores:FastNoiseLite=FastNoiseLite.new()
 
-var terrain=[]
-var ore=[]
+var biomes_list:Array=[]
+var ores_list:Array=[]
 
-
-var noise:Noise
-var orenoise:Noise
-var biomesnoise:Noise
-
-var width:int=300
-var height:int=300
-
-func _ready():
-	noise=noise_texture.noise
-	orenoise=ore_noise_texture.noise
-	biomesnoise=biomes_noise_texture.noise
-	generate_world()
 func generate_world():
-	var noise_val
-	var ore_noise_val
-	var biomes_noise_val
+
 	for x in range(-width/2,width/2):
 		for y in range(-height/2,height/2):
-			noise_val=noise.get_noise_2d(x,y)
-			ore_noise_val=orenoise.get_noise_2d(x,y)
-			biomes_noise_val=biomesnoise.get_noise_2d(x,y)
+			var biomes_val=biomes.get_noise_2d(x,y)
+			var terrain_val=terrain.get_noise_2d(x,y)
+			var ores_val=ores.get_noise_2d(x,y)
 			
-			if biomes_noise_val>0.7:
-				pass #vulkan biome
+			if biomes_val>0.04 and biomes_val<0.38 and terrain_val>0.13:
+				biomes_list.append([Vector2(x,y),1])
+				print("vulcan")
+				if ores_val>0.7:
+					ores_list.append([Vector2(x,y),2])
+				elif ores_val>0.5:
+					ores_list.append([Vector2(x,y),0])
+			if biomes_val>0.2 and biomes_val<0.8 and terrain_val>0.13:
+				biomes_list.append([Vector2(x,y),0])
+				
+				if 0.4<ores_val and ores_val<0.54:
+					ores_list.append([Vector2(x,y),1])
+				if 0.4<ores_val and ores_val>0.54:
+					ores_list.append([Vector2(x,y),0])
+			$Map.set_cell(0,Vector2(x,y),1,Vector2(13,1))
+	var flat=[]
+	var vulcan=[]
+	for vec in biomes_list:
+		if vec[1]==0:
+			flat.append(vec[0])
+		if vec[1]==1:
+			vulcan.append(vec[0])
+	$Map.set_cells_terrain_connect(1,flat,0,0)
+	$Map.set_cells_terrain_connect(1,vulcan,1,0)
+	
+func _ready():
+	generate_world()
+
